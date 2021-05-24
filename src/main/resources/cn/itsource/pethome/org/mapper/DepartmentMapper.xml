@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.itsource.pethome.org.mapper.DepartmentMapper">
+<!--    插入员工-->
+<!--    useGeneratedKeys="true":获取主键自增的值-->
+<!--    keyColumn="id" ：把指定的列对应的值-->
+<!--    keyProperty="id"：赋值到domain中指定的属性中-->
+    <insert id="add" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into t_department (sn,name,state,manager_id,parent_id) value (#{sn},#{name},#{state},#{manager.id},#{parent.id})
+    </insert>
+<!--    更新员工-->
+    <update id="update">
+        update t_department set
+        sn=#{sn},
+        name=#{name},
+        state=#{state},
+        manager_id=#{manager.id},
+        parent_id=#{parent.id}
+        where id=#{id}
+    </update>
+    <delete id="delete">
+        delete from t_department where id=#{id}
+    </delete>
+<!--    批量删除separator分隔符  -->
+    <delete id="batchRemove">
+        delete from t_department where id in
+        <foreach collection="array" item="i" open="(" close=")" separator="," >
+            #{i.id}
+        </foreach>
+    </delete>
+    <!--    查询员工根据id-->
+    <select id="loadById" resultType="Department">
+        select * from t_department where id = #{id}
+    </select>
+<!--    查询所由员工-->
+    <resultMap id="deparementResultMap" type="Department">
+        <id column="id" property="id"></id>
+        <result column="sn" property="sn"></result>
+        <result column="name" property="name"></result>
+        <result column="state" property="state"></result>
+        <association property="manager" javaType="Employee">
+            <id column="eid" property="id"></id>
+            <result column="ename" property="username"></result>
+        </association>
+        <association property="parent" javaType="Department">
+            <id column="did" property="id"></id>
+            <result column="dname" property="name"></result>
+        </association>
+    </resultMap>
+    <select id="loadAll" resultMap="deparementResultMap">
+        select d1.*,e.username ename,e.id eid,d2.id did,d2.name dname from t_department d1
+        left join t_employee e on d1.manager_id = e.id
+        left join t_department d2 on d1.parent_id = d2.id
+    </select>
+    <select id="findCount" resultType="int">
+        select count(*) from t_department d1
+        <include refid="selectWhere"></include>
+    </select>
+    <select id="findByQuery" resultMap="deparementResultMap" >
+        select d1.*,e.username ename,e.id eid,d2.id did,d2.name dname from t_department d1
+        left join t_employee e on d1.manager_id = e.id
+        left join t_department d2 on d1.parent_id = d2.id
+        <include refid="selectWhere"></include>
+        limit #{begin},#{pageSize}
+    </select>
+    <sql id="selectWhere">
+        <where>
+            <if test="name!=null and name!=''">
+                and d1.name like concat("%",#{name},"%")
+            </if>
+            <if test="state!=null">
+                and d1.state =#{state}
+            </if>
+        </where>
+
+    </sql>
+</mapper>
